@@ -1,0 +1,46 @@
+package com.ecmoho.service.purchase.service.logic;
+
+import com.ecmoho.facade.purchase.model.table.Purchase;
+import org.apache.commons.lang3.StringUtils;//StringUtils工具类
+import org.springframework.util.ObjectUtils;//ObjectUtils工具类
+
+import java.util.ArrayList;
+import java.util.List;
+
+/***
+ * Created by CaoXingYun on 2018/10/30
+ **/
+public class Ssdsdsd {
+
+    public static void main(String[] args) {
+
+        List<String> list = new ArrayList<>();
+		
+        if(ObjectUtils.isEmpty(list)){
+            System.out.println("size 0");
+        }
+        List<String> list2 = null;
+        //可判断List为null 和size = 0
+		if(ObjectUtils.isEmpty(list2)){
+            System.out.println("null");
+        }
+        Purchase purchase = new Purchase();
+        purchase.setType("");
+		//可判断
+        if(StringUtils.isBlank(purchase.getCreateUser())){
+            System.out.println("null");
+        }
+        if(StringUtils.isBlank(purchase.getType())){
+            System.out.println("blank");
+        }
+		
+        if(ObjectUtils.isEmpty(purchase)){
+            System.out.println("oooo");
+        }
+        Purchase purchase1 = null;
+        if(ObjectUtils.isEmpty(purchase1)){
+            System.out.println("null");
+        }
+		//可判断对象为null，
+    }
+}

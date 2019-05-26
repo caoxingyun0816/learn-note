@@ -1,0 +1,98 @@
+https://blog.csdn.net/cen_s/article/details/76472834?utm_source=copy 
+在日常开发中我们经常会碰到小数计算，而小数直接计算的话会出现一些小小的错误，
+System.out.println(1.01 + 2.02)；
+你说能输出什么？3.03？实际上输出的是3.0300000000000002。这是因为不论是float 还是double都是浮点数，而计算机是二进制的，浮点数会失去一定的精确度。有没有不失精度的办法呢？这里就要用到BigDecimal了。
+Java在java.math包中提供的API类BigDecimal，用来对超过16位有效位的数进行精确的运算。双精度浮点型变量double可以处理16位有效数。
+
+在实际应用中，需要对更大或者更小的数进行运算和处理。float和double只能用来做科学计算或者是工程计算，在商业计算中要用java.math.BigDecimal。
+
+创建BigDecimal对象主要有两种。
+
+BigDecimal b1 = new BigDecimal("1.34");//1.34
+BigDecimal b2 = BigDecimal.valueOf(1.34);//1.34
+
+其中b1也可以写成new BigDecimal(Double.toString(1.34))，可以直接new BigDecimal(1.34)吗，也是可以的，只是会出现上述的精度问题。
+
+BigDecimal one1 = new BigDecimal(1.34);//1.3400000000000000799360577730112709105014801025390625
+BigDecimal two1 = new BigDecimal("1.34");//1.34
+
+BigDecimal的加减乘除运算。
+
+public BigDecimal add(BigDecimal value);//加法
+public BigDecimal subtract(BigDecimal value);//减法 
+public BigDecimal multiply(BigDecimal value);//乘法
+public BigDecimal divide(BigDecimal value);//除法
+也可以照下面加法例子写成一个util，另外三个都差不多就不展开了。
+
+public static double add(double value1,double value2){
+    BigDecimal b1 = new BigDecimal(Double.toString(value1));
+    BigDecimal b2 = new BigDecimal(Double.toString(value2));
+    return b1.add(b2).doubleValue();
+}
+BigDecimal的运算都没有对原值进行操作，而是返回一个新的BigDecimal对象，这点可能有些小伙伴会搞错要注意一下。
+BigDecimal b1 =new BigDecimal("1.34");
+System.out.println("b1: " + b1);
+BigDecimal b2 =new BigDecimal("2.34");
+b1.add(b2);
+System.out.println("b1: " + b1);//b1并没有变
+
+BigDecimal的比较用的是BigDecimal的compareTo方法，将此 BigDecimal 与指定的 BigDecimal 比较。
+根据此方法，值相等但具有不同标度的两个BigDecimal对象（如，2.0 和 2.00）被认为是相等的。
+当此 BigDecimal 在数字上小于、等于或大于被比较对象时，返回 -1、0 或 1。
+BigDecimal one = BigDecimal.valueOf(1);
+BigDecimal two = BigDecimal.valueOf(2);
+BigDecimal three = one.add(two);
+int i1 = one.compareTo(two);//-1
+int i2 = two.compareTo(two);//0
+int i3 = three.compareTo(two);//1
+
+(1)商业计算使用BigDecimal。
+
+(2)尽量使用参数类型为String的构造函数。
+
+(3) BigDecimal都是不可变的（immutable）的，在进行每一步运算时，都会产生一个新的对象，所以在做加减乘除运算时千万要保存操作后的值。
+
+(4)我们往往容易忽略JDK底层的一些实现细节，导致出现错误，需要多加注意。
+
+
+
+
+scale
+
+ BigDecimal c = new BigDecimal("3.15");
+ c.setScale(1,BigDecimal.ROUND_DOWN);//3.1 向下，去位处理
+        c.setScale(1,BigDecimal.ROUND_UP);//3.2 向上,进位处理
+        c.setScale(1,BigDecimal.ROUND_HALF_DOWN); //四舍五入 3.15 边3.1 ,5是向下舍(5舍6入)
+        c.setScale(1,BigDecimal.ROUND_HALF_UP);//四舍五入 3.2
+
+//        ROUND_CEILING
+//        Rounding mode to round towards positive infinity.
+//                向正无穷方向舍入
+//
+//                ROUND_DOWN
+//        Rounding mode to round towards zero.
+//        向零方向舍入
+//
+//                ROUND_FLOOR
+//        Rounding mode to round towards negative infinity.
+//                向负无穷方向舍入
+//
+//                ROUND_HALF_DOWN
+//        Rounding mode to round towards “nearest neighbor” unless both neighbors are equidistant, in which case round down.
+//                向（距离）最近的一边舍入，除非两边（的距离）是相等,如果是这样，向下舍入, 例如1.55 保留一位小数结果为1.5
+//
+//        ROUND_HALF_EVEN
+//        Rounding mode to round towards the “nearest neighbor” unless both neighbors are equidistant, in which case, round towards the even neighbor.
+//                向（距离）最近的一边舍入，除非两边（的距离）是相等,如果是这样，如果保留位数是奇数，使用ROUND_HALF_UP ，如果是偶数，使用ROUND_HALF_DOWN
+//
+//                ROUND_HALF_UP
+//        Rounding mode to round towards “nearest neighbor” unless both neighbors are equidistant, in which case round up.
+//                向（距离）最近的一边舍入，除非两边（的距离）是相等,如果是这样，向上舍入, 1.55保留一位小数结果为1.6
+//
+//        ROUND_UNNECESSARY
+//        Rounding mode to assert that the requested operation has an exact result, hence no rounding is necessary.
+//        计算结果是精确的，不需要舍入模式
+//
+//                ROUND_UP
+//        Rounding mode to round away from zero.
+//                向远离0的方向舍入

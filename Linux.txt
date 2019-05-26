@@ -1,0 +1,270 @@
+lilux 脚本
+
+1.启动脚本
+#!/bin/bash
+jps | grep eureka
+while [ $? -eq 0 ]           $?是shell变量,表示"最后一次执行命令"的退出状态.0为成功,非0为失败.
+do
+  kill `jps | grep eureka | awk '{print $1}'`   //awk是用来提取列的主要工具；{print $1}就是将某一行（一条记录）中以空格为分割符的第一个字段打印出来,awk '{print $0}' 指显示所有信息
+  kill pid 关闭进程
+  sleep 5  //休眠5秒钟
+  jps | grep eureka
+done
+sleep 8
+nohup java -jar /usr/project/ecmoho-eureka/target/ecmoho-eureka-1.0.0.jar > /usr/project/ecmoho-eureka/sysetm_log.log 2>&1 &
+echo "Finished"
+
+nohup
+nohup 不挂断运行的命令，当终端关闭或CTRL+C的时候，程序依旧运行
+java -jar 方式运行springboot项目
+前台启动
+java -jar XXX.jar
+
+指定启动内存大小
+java -Xms1024m -Xmx1024m -Xmn1024m -server -jar boot.jar
+
+后台启动
+java -jar xxx.jar &
+区别:前台启动ctrl+c就会关闭程序,后台启动ctrl+c不会关闭程序
+制定控制台的标准输出
+java -jar xxx.jar > catalina.out  2>&1 & 
+ 
+catalina.out将标准输出指向制定文件catalina.out
+2>&1 输出所有的日志文件
+& 后台启动
+
+jps(Java Virtual Machine Process Status Tool)是JDK 1.5提供的一个显示当前所有java进程pid的命令，简单实用，非常适合在linux/unix平台上简单察看当前java进程的一些简单情况
+
+ps命令，这个命令主要是用来显示当前系统的进程情况，有哪些进程，及其 id。 jps 也是一样，它的作用是显示当前系统的java进程情况，及其id号。我们可以通过它来查看我们到底启动了几个java进程（因为每一个java程序都会独占一个java虚拟机实例），和他们的进程号（为下面几个程序做准备），并可通过opt来查看这些进程的详细启动参数。
+
+比较常用的参数：
+
+-q 只显示pid，不显示class名称,jar文件名和传递给main 方法的参数
+
+-m 输出传递给main 方法的参数，在嵌入式jvm上可能是null
+
+-l 输出应用程序main class的完整package名 或者 应用程序的jar文件完整路径名
+
+-v 输出传递给JVM的参数
+
+jps命令有个地方很不好，似乎只能显示当前用户的java进程，要显示其他用户的还是只能用unix/linux的ps命令。
+
+2.
+wget 下载
+wget url  直接下载文件
+tar xf xxx.gz 解压
+
+3.top 显示当前进程 htop 可操控的进程显示界面，需要自己安装
+
+4.tar
+
+#压缩
+tar -czvf ***.tar.gz
+tar -cjvf ***.tar.bz2
+#解压缩
+tar -xzvf ***.tar.gz
+tar -xjvf ***.tar.bz2
+
+
+简介
+
+参数：
+
+-c  ：建立一个压缩档案的参数指令(create 的意思)；
+
+-x  ：解开一个压缩档案的参数指令！
+
+-t  ：查看 tarfile 里面的档案！
+
+特别注意，在参数的下达中， c/x/t 仅能存在一个！不可同时存在！
+
+因为不可能同时压缩与解压缩。
+
+-z  ：是否同时具有 gzip 的属性？亦即是否需要用 gzip 压缩？
+
+-j  ：是否同时具有 bzip2 的属性？亦即是否需要用 bzip2 压缩？
+
+-v  ：压缩的过程中显示档案！这个常用，但不建议用在背景执行过程！
+
+-f  ：使用档名，请留意，在 f 之后要立即接档名喔！不要再加参数！
+
+例如使用『 tar -zcvfP tfile sfile 』就是错误的写法，要写成
+
+『 tar -zcvPf tfile sfile 』才对喔！
+
+-p  ：使用原档案的原来属性（属性不会依据使用者而变）
+
+-P  ：可以使用绝对路径来压缩！
+
+-N  ：比后面接的日期(yyyy/mm/dd)还要新的才会被打包进新建的档案中！
+
+--exclude FILE：在压缩的过程中，不要将 FILE 打包！
+
+范例一：将整个 /etc 目录下的档案全部打包成为 /tmp/etc.tar
+
+[root@linux ~]# tar -cvf /tmp/etc.tar /etc  <==仅打包，不压缩！
+
+[root@linux ~]# tar -czvf /tmp/etc.tar.gz /etc  <==打包后，以 gzip 压缩
+
+[root@linux ~]# tar -cjvf /tmp/etc.tar.bz2 /etc  <==打包后，以 bzip2 压缩
+
+
+
+ tar -czvf dsja.tar /dsadas
+ tar -cjvf
+ 
+ tar -xzvp
+ tar -xjvp 
+ 
+ 5.make makefile
+ 
+ ◊make是什么？
+
+　　make是一个命令工具，是一个解释makefile中指令的命令工具。它可以简化编译过程里面所下达的指令，当执行 make 时，make 会在当前的目录下搜寻 Makefile (or makefile) 这个文本文件，执行对应的操作。make 会自动的判别原始码是否经过变动了，而自动更新执行档。
+
+◊为什么要使用make？
+
+　　假设，现在一个项目里面包含了100个程序文件，如果要对这个项目进行编译，那么光是编译指令就有100条。如果要重新进行编译，那么就又得像之前一样重新来一遍。这样重复且繁琐的工作实在是让我们很不爽啊。所以，用make来进行操作，间接调用gcc岂不是很方便？如果我们更动过某些原始码档案，则 make 也可以主动的判断哪一个原始码与相关的目标文件档案有更新过， 并仅更新该档案。这样可以减少重新编译所需要的时间，也会更加方便。
+
+◊makefile又是干什么的？
+
+　　makefile其实就是一个文档，里面定义了一系列的规则指定哪些文件需要先编译，哪些文件需要后编译，哪些文件需要重新编译，它记录了原始码如何编译的详细信息！ makefile一旦写好，只需要一个make命令，整个工程完全自动编译，极大的提高了软件开发的效率。
+
+6.linux 安装redis
+执行 redis-service 安装redis
+
+后台启动redis服务
+
+a)首先编辑conf文件，将daemonize属性改为yes（表明需要在后台运行）
+
+cd etc/
+Vi redis.conf
+
+b)再次启动redis服务，并指定启动服务配置文件
+
+redis-server /usr/local/redis/etc/redis.conf
+
+
+
+启动脚本
+#!/bin/sh
+
+work_path=$(dirname $(readlink -f $0))
+
+project_name=`awk '/<artifactId>[^<]+<\/artifactId>/{gsub(/<artifactId>|<\/artifactId>/,"",$1);print $1;exit;}' $work_path/pom.xml`
+
+version=`awk '/<version>[^<]+<\/version>/{gsub(/<version>|<\/version>/,"",$1);print $1;exit;}' $work_path/pom.xml`
+
+project_jar=$project_name-$version.jar
+echo $project_jar
+
+jps | grep $project_jar
+while [ $? -eq 0 ]
+do
+ kill `jps | grep $project_jar | awk '{print $1}'`
+ sleep 3
+ jps | grep $project_jar
+done
+
+sleep 5
+
+jps | grep $project_jar
+while [ $? -eq 1 ]
+do
+ nohup java \
+        -XX:+PrintGCDetails \
+        -XX:+PrintCommandLineFlags \
+        -Xms1024m -Xmx1024m \
+        -Dspring.profiles.active=uat \
+        -Dspring.profiles.url=http://192.168.1.132:1001 \
+        -DlogPath=/usr/project/$project_name/log/ \
+        -DdefaultLevel=info \
+        -DlogstashUrl= \
+        -jar /usr/project/$project_name/target/$project_jar > /usr/project/$project_name/sysetm_log.log 2>&1 &
+ sleep 10
+ jps | grep $project_jar
+done
+echo "Finished"
+
+ 
+ 
+ 
+ # /etc/profile
+
+# System wide environment and startup programs, for login setup
+# Functions and aliases go in /etc/bashrc
+
+# It's NOT a good idea to change this file unless you know what you
+# are doing. It's much better to create a custom.sh shell script in
+# /etc/profile.d/ to make custom changes to your environment, as this
+# will prevent the need for merging in future updates.
+
+pathmunge () {
+    case ":${PATH}:" in
+        *:"$1":*)
+            ;;
+        *)
+            if [ "$2" = "after" ] ; then
+                PATH=$PATH:$1
+            else
+                PATH=$1:$PATH
+            fi
+    esac
+}
+
+
+if [ -x /usr/bin/id ]; then
+    if [ -z "$EUID" ]; then
+        # ksh workaround
+        EUID=`/usr/bin/id -u`
+        UID=`/usr/bin/id -ru`
+    fi
+    USER="`/usr/bin/id -un`"
+    LOGNAME=$USER
+    MAIL="/var/spool/mail/$USER"
+fi
+
+# Path manipulation
+if [ "$EUID" = "0" ]; then
+    pathmunge /sbin
+    pathmunge /usr/sbin
+    pathmunge /usr/local/sbin
+else
+    pathmunge /usr/local/sbin after
+    pathmunge /usr/sbin after
+    pathmunge /sbin after
+fi
+
+HOSTNAME=`/bin/hostname 2>/dev/null`
+HISTSIZE=1000
+if [ "$HISTCONTROL" = "ignorespace" ] ; then
+    export HISTCONTROL=ignoreboth
+else
+    export HISTCONTROL=ignoredups
+fi
+
+export PATH USER LOGNAME MAIL HOSTNAME HISTSIZE HISTCONTROL
+
+# By default, we want umask to get set. This sets it for login shell
+# Current threshold for system reserved uid/gids is 200
+# You could check uidgid reservation validity in
+# /usr/share/doc/setup-*/uidgid file
+if [ $UID -gt 199 ] && [ "`/usr/bin/id -gn`" = "`/usr/bin/id -un`" ]; then
+    umask 002
+else
+    umask 022
+fi
+
+for i in /etc/profile.d/*.sh ; do
+    if [ -r "$i" ]; then
+        if [ "${-#*i}" != "$-" ]; then
+            . "$i"
+        else
+            . "$i" >/dev/null 2>&1
+        fi
+    fi
+done
+
+unset i
+unset -f pathmunge
+

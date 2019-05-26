@@ -1,0 +1,330 @@
+@ApiOperation(value = "导出现金日报", httpMethod = "POST")
+    @RequestMapping(value = "exportDailyReport", method = {RequestMethod.POST})
+    public void exportDailyReport(@RequestBody QueryDailyCashReportParam queryReport, HttpServletResponse response) {
+        List<DailyCashReportVO> cashReportVOList = dailyCashReportService.getDailyCashReport(queryReport).getData().getList();
+        List<Map<String, Object>> exportParamList = new ArrayList<>();
+        Map<String, Object> reportMap = new HashMap<>();
+        ExportParams exportParams = new ExportParams();
+        exportParams.setTitle("本日现金汇总");
+        exportParams.setSheetName("汇总");
+        exportParams.setStyle(ExcelExportStylerBorderImpl.class);
+        reportMap.put("title", exportParams);
+        reportMap.put("entity", DailyCashReportVO.class);
+        reportMap.put("data", cashReportVOList);
+        exportParamList.add(reportMap);
+        for (DailyCashReportVO cashReportVO : cashReportVOList) {
+            QueryDailyReportDetail applyDate = new QueryDailyReportDetail();
+            applyDate.setApplyDate(cashReportVO.getApplyDate());
+            List<DailyCashReportDetailVO> detailVOS = dailyCashReportService.getDailyCashReportDetail(applyDate).getData();
+            Map<String, Object> detailMap = new HashMap<>();
+            ExportParams detailParams = new ExportParams();
+            detailParams.setTitle(DateUtils.date2String(cashReportVO.getApplyDate()));
+            detailParams.setSheetName(DateUtils.date2String(cashReportVO.getApplyDate()));
+            detailParams.setStyle(ExcelExportStylerBorderImpl.class);
+            detailMap.put("title", detailParams);
+            detailMap.put("entity", DailyCashReportDetailVO.class);
+            detailMap.put("data", detailVOS);
+            exportParamList.add(detailMap);
+        }
+        try {
+            dailyCashReportService.exportDailyReport(exportParamList, response);
+        } catch (ExcelException e) {
+            this.logger.error(e);
+            throw new BusinessRunTimeException(ErrorCode.FAIL_EXPORTEXCEL);
+        }
+
+
+
+@Override
+    public void exportDailyReport(List<Map<String, Object>> exportParamList, HttpServletResponse response) throws ExcelException {
+        //设置默认文件名为当前时间：年月日时分秒
+        String fileName = new SimpleDateFormat("yyyyMMddhhmmss").format(new Date()).toString();
+        //设置response头信息
+        response.setContentType("application/vnd.ms-excel");
+        response.setHeader("Content-disposition", "attachment; filename=" + fileName + ".xls");
+        response.setCharacterEncoding("UTF-8");
+        try {
+            OutputStream out = response.getOutputStream();
+            Workbook workbook = ExcelExportUtil.exportExcel(exportParamList, ExcelType.HSSF);
+            workbook.write(out);
+            workbook.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            //如果是ExcelException，则直接抛出
+            if (e instanceof ExcelException) {
+                throw (ExcelException) e;
+                //否则将其它异常包装成ExcelException再抛出
+            } else {
+                throw new ExcelException("导出现金日报失败！");
+            }
+        }
+    }
+
+
+    package com.ecmoho.service.report.model.vo;
+
+import cn.afterturn.easypoi.excel.annotation.Excel;
+import io.swagger.annotations.ApiModelProperty;
+import lombok.Data;
+
+import java.util.Date;
+
+/**
+ * Create by HuangJin 0n 2019/1/22.
+ */
+@Data
+public class DailyCashReportVO {
+
+    @ApiModelProperty(value = "id")
+    private String id;
+
+    @Excel(name = "日期", format = "yyyy-MM-dd")
+    @ApiModelProperty(value = "日期")
+    private Date applyDate;
+
+    @Excel(name = "国内总流入", numFormat = "###,###.##")
+    @ApiModelProperty(value = "国内总流入")
+    private Double totalInternalIncome;
+
+    @Excel(name = "国内总流出", numFormat = "###,###.##")
+    @ApiModelProperty(value = "国内总流出")
+    private Double totalInternalOutcome;
+
+    @Excel(name = "国内资金汇总", numFormat = "###,###.##", width = 15)
+    @ApiModelProperty(value = "国内资金汇总")
+    private Double totalInternalCapital;
+
+    @Excel(name = "国内可用资金", numFormat = "###,###.##", width = 15)
+    @ApiModelProperty(value = "国内可用资金")
+    private Double totalInternalAvailableCapital;
+
+    @Excel(name = "国外总流入", numFormat = "###,###.##")
+    @ApiModelProperty(value = "国外总流入")
+    private Double totalForeignIncome;
+
+    @Excel(name = "国外总流出", numFormat = "###,###.##")
+    @ApiModelProperty(value = "国外总流出")
+    private Double totalForeignOutcome;
+
+    @Excel(name = "国外资金汇总（元）", numFormat = "###,###.##", width = 19)
+    @ApiModelProperty(value = "国外资金汇总（元）")
+    private Double totalForeignCapital;
+
+    @Excel(name = "国外可用资金（元）", numFormat = "###,###.##", width = 19)
+    @ApiModelProperty(value = "国外可用资金（元）")
+    private Double totalForeignAvailableCapital;
+}
+
+
+
+
+
+sprinboot easypoi
+
+开发中经常会遇到excel的处理，导入导出解析等等，java中比较流行的用poi，但是每次都要写大段工具类来搞定这事儿，此处推荐一个别人造好的轮子【easypoi】，下面介绍下“轮子”的使用。
+pom引入
+不再需要其他jar
+       <dependency>
+            <groupId>cn.afterturn</groupId>
+            <artifactId>easypoi-base</artifactId>
+            <version>3.0.3</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.afterturn</groupId>
+            <artifactId>easypoi-web</artifactId>
+            <version>3.0.3</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.afterturn</groupId>
+            <artifactId>easypoi-annotation</artifactId>
+            <version>3.0.3</version>
+        </dependency>
+
+编写实体类
+此处注意必须要有空构造函数，否则会报错“对象创建错误”
+关于注解@Excel，其他还有@ExcelCollection，@ExcelEntity ，@ExcelIgnore，@ExcelTarget等，此处我们用不到，可以去官方查看更多
+
+
+
+属性
+类型
+类型
+说明
+
+
+
+
+name
+String
+null
+列名
+
+
+needMerge
+boolean
+fasle
+纵向合并单元格
+
+
+orderNum
+String
+"0"
+列的排序,支持name_id
+
+
+replace
+String[]
+{}
+值得替换  导出是{a_id,b_id} 导入反过来
+
+
+savePath
+String
+"upload"
+导入文件保存路径
+
+
+type
+int
+1
+导出类型 1 是文本 2 是图片,3 是函数,10 是数字 默认是文本
+
+
+width
+double
+10
+列宽
+
+
+height
+double
+10
+列高,后期打算统一使用@ExcelTarget的height,这个会被废弃,注意
+
+
+isStatistics
+boolean
+fasle
+自动统计数据,在追加一行统计,把所有数据都和输出这个处理会吞没异常,请注意这一点
+
+
+isHyperlink
+boolean
+false
+超链接,如果是需要实现接口返回对象
+
+
+isImportField
+boolean
+true
+校验字段,看看这个字段是不是导入的Excel中有,如果没有说明是错误的Excel,读取失败,支持name_id
+
+
+exportFormat
+String
+""
+导出的时间格式,以这个是否为空来判断是否需要格式化日期
+
+
+importFormat
+String
+""
+导入的时间格式,以这个是否为空来判断是否需要格式化日期
+
+
+format
+String
+""
+时间格式,相当于同时设置了exportFormat 和 importFormat
+
+
+databaseFormat
+String
+"yyyyMMddHHmmss"
+导出时间设置,如果字段是Date类型则不需要设置 数据库如果是string 类型,这个需要设置这个数据库格式,用以转换时间格式输出
+
+
+numFormat
+String
+""
+数字格式化,参数是Pattern,使用的对象是DecimalFormat
+
+
+imageType
+int
+1
+导出类型 1 从file读取 2 是从数据库中读取 默认是文件 同样导入也是一样的
+
+
+suffix
+String
+""
+文字后缀,如% 90 变成90%
+
+
+isWrap
+boolean
+true
+是否换行 即支持\n
+
+
+mergeRely
+int[]
+{}
+合并单元格依赖关系,比如第二列合并是基于第一列 则{1}就可以了
+
+
+mergeVertical
+boolean
+fasle
+纵向合并内容相同的单元格
+
+
+
+import cn.afterturn.easypoi.excel.annotation.Excel;
+
+import java.util.Date;
+
+public class Person {
+
+    @Excel(name = "姓名", orderNum = "0")
+    private String name;
+
+    @Excel(name = "性别", replace = {"男_1", "女_2"}, orderNum = "1")
+    private String sex;
+
+    @Excel(name = "生日", exportFormat = "yyyy-MM-dd", orderNum = "2")
+    private Date birthday;
+
+    public Person(String name, String sex, Date birthday) {
+        this.name = name;
+        this.sex = sex;
+        this.birthday = birthday;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getSex() {
+        return sex;
+    }
+
+    public void setSex(String sex) {
+        this.sex = sex;
+    }
+
+    public Date getBirthday() {
+        return birthday;
+    }
+
+    public void setBirthday(Date birthday) {
+        this.birthday = birthday;
+    }
+}
+
+

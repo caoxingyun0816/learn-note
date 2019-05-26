@@ -1,0 +1,123 @@
+
+10.22
+1.Java中throw和throws的区别
+throw关键字：语句抛出异常   throws关键字：声明异常（方法抛出一个异常）
+    01.throw   是语句抛出一个异常。
+语法：throw (异常对象);
+         throw e;
+    02. throws  是方法可能抛出异常的声明。(用在声明方法时，表示该方法可能要抛出异常)   调用者必须做出处理（捕获或继续抛出）
+语法：[(修饰符)](返回值类型)(方法名)([参数列表])[throws(异常类)]{......}
+            public void doA(int a) throws Exception1,Exception3{......}
+			
+    03.throws可以单独使用，但throw不能， throw要么和try-catch-finally语句配套使用，要么与throws配套使用。但throws可以单独使用，然后再由处理异常的方法捕获。
+
+    04.throw语句用在方法体内,表示抛出异常,由方法体内的语句处理 
+         throws语句用在方法声明后面,表示再抛出异常,由调用这个方法的上一级方法中的语句来处理，必须做出处理(捕获或继续声明)
+
+    05.throws主要是声明这个方法会抛出这种类型的异常，使其他地方调用它时知道要捕获这个异常，使得提醒必须做出处理。否则编译是不会通过的。
+         throw是具体向外抛异常的动作，所以它是抛出一个异常实例。
+		 
+总结	 
+1、throws出现在方法函数头；而throw出现在函数体。
+2、throws表示出现异常的一种可能性，并不一定会发生这些异常；throw则是抛出了异常，执行throw则一定抛出了某种异常。
+3、两者都是消极处理异常的方式（这里的消极并不是说这种方式不好），只是抛出或者可能抛出异常，但是不会由函数去处理异常，真正的处理异常由函数的上层调用处理。
+
+2.自定义异常
+用户可以自定义异常，新建一个异常类，让其继承Exception类或Exception的某个子类。然后用throw抛出自己定义的异常类对象
+
+3.springboot 统一异常处理
+经过测试发现@AdviceController可以捕获到Controller层抛出的异常(方法throws往上抛出的异常和throw e 抛出实例都能捕获)，
+
+在实际测试中还发现，如果在Controller中不做异常catch处理，在service中抛出异常，那么也是可以在这里捕获到异常的。
+
+
+4.springboot中定义全局异常处理
+@AdviceController 捕获异常
+@ExceptionHandler 统一处理异常，返回给前台对应的错误信息。
+
+如果直接在controller中 throws exception 在增强器中也是可以捕获到的。
+throws 系统异常 是需要在上一层处理的。如果throws 自定义异常，可以不在上层处理，直接抛出，编译能通过。
+
+ 
+异常处理总结
+throws 系统异常，和throw e 一起使用，这是将异常往上层抛出。需要在上层捕获异常处理(try catch)，可以捕获异常自己处理，也可以重新抛出自定义异常如(throw Myexception),或者接着往上层抛出。 然后定义全局的异常处理，处理异常，返回给前端错误的信息，后端也能打印出对应的堆栈信信息。
+往上层抛出异常
+ public static double div(double value1, double value2, int scale) throws IllegalAccessException {
+        if (scale < 0) {
+            //如果精确范围小于0，抛出异常信息。
+            throw new IllegalArgumentException("精确度不能小于0");
+        } else if (value2 == 0) {
+            //如果除数为0，抛出异常信息。
+            throw new IllegalArgumentException("除数不能为0");
+        }
+        BigDecimal b1 = new BigDecimal(Double.valueOf(value1));
+        BigDecimal b2 = new BigDecimal(Double.valueOf(value2));
+        return b1.divide(b2, scale, BigDecimal.ROUND_HALF_UP).doubleValue();
+    }
+
+捕获处理
+if(purchaseDetailVO.getAverageSale() != null){
+            Double inUseStock = null;
+            try {
+                inUseStock = BigDemicalUtil.div(BigDemicalUtil.add(purchaseDetailVO.getInStock(),purchaseDetailVO.getOutStock()),purchaseDetailVO.getAverageSale(),2);
+            } catch (IllegalAccessException e) {
+			//1.直接自己处理，不抛出异常信息,例如打印信息
+			//system.out.println('123456')
+            //2.捕获后再抛出自定义异常
+				throw new BusinessRunTimeException(PurchaseErrorCode.ERROR_CALCULATE);
+            }
+            purchaseDetailVO.setInUseStock(inUseStock);
+        }
+
+//异常处理器处理异常信息，返回给前台对应的错误码和信息，而不是服务异常，一堆堆栈信息。
+ @ExceptionHandler
+    @ResponseBody
+    public ResponseVO exceptionHandler(HttpServletRequest request, Exception ex) {
+        if (ex instanceof BusinessRunTimeException) {
+            logger.info("捕获业务异常,method: " + request.getRequestURI(), ex);
+            if (((BusinessRunTimeException) ex).getErrorCode() != null) {
+                BusinessRunTimeException srte = (BusinessRunTimeException) ex;
+                return ResponseUtil.error(srte.getErrorCode());
+            } else if (((BusinessRunTimeException) ex).getCode() != null) {
+                BusinessRunTimeException srte = (BusinessRunTimeException) ex;
+                return ResponseUtil.error(srte.getCode(), srte.getMessage());
+            }
+            return ResponseUtil.error(ex.getMessage());
+        } else if (ex instanceof MethodArgumentNotValidException) {
+            String defaultMessage = ((MethodArgumentNotValidException) ex).getBindingResult().getFieldError().getDefaultMessage();
+            if (StringUtils.isNotBlank(defaultMessage)) {
+                return ResponseUtil.error(ErrorCode.WRONG_PARAM.getCode(), defaultMessage);
+            }
+            return ResponseUtil.error(ErrorCode.WRONG_PARAM);
+        } else if (ex instanceof HystrixRuntimeException) {
+            this.logger.error("feign调用异常：", ex);
+            return ResponseUtil.error(ErrorCode.WRONG_ONSERVER);
+        } else {
+            logger.error("捕获异常,method: " + request.getRequestURI(), ex);
+        }
+        return ResponseUtil.error(ErrorCode.WRONG_ONSERVER);
+    }
+	
+ throws 自定义异常，上层不捕获或者接着往上抛出，都不会报编译错误。
+ //往上抛出
+  public static double div(double value1, double value2, int scale) throws myException {
+        if (scale < 0) {
+            //如果精确范围小于0，抛出异常信息。
+            throw new myException("精确度不能小于0");
+        } else if (value2 == 0) {
+            //如果除数为0，抛出异常信息。
+            throw new myException("除数不能为0");
+        }
+        BigDecimal b1 = new BigDecimal(Double.valueOf(value1));
+        BigDecimal b2 = new BigDecimal(Double.valueOf(value2));
+        return b1.divide(b2, scale, BigDecimal.ROUND_HALF_UP).doubleValue();
+    }
+ 
+controller再往上层抛出
+TestController
+{
+	public test(){
+		div(1,0);
+	}
+}
+异常处理器依然会捕获。
